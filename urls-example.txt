@@ -1,0 +1,11 @@
+# Example URLs file for accessibility testing
+# Lines starting with # are comments and will be ignored
+# Blank lines are also ignored
+
+# Example websites to test
+https://example.com
+
+# W3C's intentionally inaccessible demo page (for testing violations)
+https://www.w3.org/WAI/demos/bad/
+
+# Add your URLs below, one per line
