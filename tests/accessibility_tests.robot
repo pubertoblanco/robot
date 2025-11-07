@@ -1,17 +1,19 @@
 *** Settings ***
 Documentation     Automated accessibility testing using axe-core
-Library           SeleniumLibrary
 Library           Collections
 Library           OperatingSystem
 Library           String
+Library           SeleniumLibrary
 Library           ../keywords/AxeLibrary.py
 Suite Setup       Open Browser To Start Page
 Suite Teardown    Close Browser
+
 
 *** Variables ***
 ${BROWSER}        headlesschrome
 ${URLS_FILE}      ${CURDIR}/../urls.txt
 ${IMPACT}         ${EMPTY}
+
 
 *** Test Cases ***
 Test Accessibility For URLs From File
@@ -21,6 +23,7 @@ Test Accessibility For URLs From File
     FOR    ${url}    IN    @{urls}
         Run Accessibility Test    ${url}
     END
+
 
 *** Keywords ***
 Open Browser To Start Page
@@ -33,11 +36,12 @@ Load URLs From File
     [Arguments]    ${file_path}
     ${content}=    Get File    ${file_path}
     @{lines}=    Split String    ${content}    \n
-    ${urls}=    Create List
+    VAR    @{urls}    @{EMPTY}
     FOR    ${line}    IN    @{lines}
         ${trimmed}=    Strip String    ${line}
-        Run Keyword If    '${trimmed}' != '' and not '${trimmed}'.startswith('#')
-        ...    Append To List    ${urls}    ${trimmed}
+        IF    '${trimmed}' != '' and not '${trimmed}'.startswith('#')
+            Append To List    ${urls}    ${trimmed}
+        END
     END
     RETURN    ${urls}
 
@@ -50,8 +54,11 @@ Run Accessibility Test
     ${violations}=    Run Axe Analysis    ${IMPACT}
     ${violation_count}=    Get Length    ${violations}
     Log    Found ${violation_count} accessibility violations    console=yes
-    Run Keyword If    ${violation_count} > 0    Log Violations    ${violations}
-    Should Be Equal As Numbers    ${violation_count}    0    msg=Found ${violation_count} accessibility violations on ${url}
+    IF    ${violation_count} > 0
+        Log Violations    ${violations}
+    END
+    Should Be Equal As Numbers    ${violation_count}    0
+    ...    msg=Found ${violation_count} accessibility violations on ${url}
 
 Log Violations
     [Documentation]    Log detailed violation information
