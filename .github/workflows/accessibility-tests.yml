@@ -1,0 +1,72 @@
+name: Accessibility Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      impact:
+        description: 'Impact level filter (critical, serious, moderate, minor, or leave empty for all)'
+        required: false
+        default: ''
+      urls_file:
+        description: 'Path to URLs file (relative to repository root)'
+        required: false
+        default: 'urls.txt'
+
+jobs:
+  accessibility-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Install Chrome and ChromeDriver
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: stable
+        
+    - name: Run accessibility tests
+      env:
+        IMPACT: ${{ github.event.inputs.impact || '' }}
+        URLS_FILE: ${{ github.event.inputs.urls_file || 'urls.txt' }}
+      run: |
+        robot --variable IMPACT:"${IMPACT}" \
+              --variable URLS_FILE:"${URLS_FILE}" \
+              --outputdir results \
+              --report report.html \
+              --log log.html \
+              tests/accessibility_tests.robot
+      continue-on-error: true
+      
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: accessibility-test-results
+        path: |
+          results/
+        retention-days: 30
+        
+    - name: Publish HTML Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: html-report
+        path: |
+          results/report.html
+          results/log.html
+        retention-days: 30
